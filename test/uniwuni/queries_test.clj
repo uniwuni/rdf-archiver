@@ -11,15 +11,14 @@
 (require '[clojure.spec.test.alpha :as stest])
 
 
-(def iri-gen
-    (gen/one-of (list (s/gen uri?)
-                 (gen/let [x gen/string-alphanumeric] (str "unia:" "word" x "word")))))
+(def overwrites {})
 
-(def overwrites {`f.s.axiom/iri-or-prefixed-spec (constantly iri-gen)})
+(defn test-spec [f] (is (:result (:clojure.spec.test.check/ret (first (stest/check f {:gen overwrites}))))))
 
-(defn test-spec [f]  (is (nil? (:failure (stest/check f {:gen overwrites})))))
-
-(deftest agent-of-channel?-query-test
-  (testing "Channel agent query "
+(deftest query-test
+  (testing "Query generators"
     (test-spec `sut/agent-of-channel?-query)
-    (test-spec `sut/is-embodied?-query)))
+    (test-spec `sut/is-embodied?-query)
+    (test-spec `sut/add-account!-update)
+    (test-spec `sut/add-agent-account!-update)
+    ))

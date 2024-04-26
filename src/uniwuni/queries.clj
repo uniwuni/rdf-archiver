@@ -6,10 +6,11 @@
 (require '[com.yetanalytics.flint.spec
            [prologue :as f.s.prologue]
            [axiom :as f.s.axiom]
-           [query :as f.s.query]])
+           [query :as f.s.query]
+           [update :as f.s.update]])
 (require '[clojure.spec.alpha :as s])
 (require '[clojure.test.check.generators :as gen])
-
+(require '[uniwuni.general :as general])
 (s/check-asserts true)
 
 (def unia-prefix "https://uniwuni.github.io/archives#")
@@ -37,7 +38,7 @@
                       :foaf/account #{account-url}}}]})
 
 (s/fdef agent-of-channel?-query
-  :args (s/cat :account-url f.s.axiom/iri-or-prefixed-spec)
+  :args (s/cat :account-url :uniwuni/uri)
   :ret f.s.query/select-query-spec)
 
 (defn is-embodied?-query [manifestation-url]
@@ -47,23 +48,32 @@
                      :frbr/embodiment #{manifestation-url}}}]})
 
 (s/fdef is-embodied?-query
-  :args (s/cat :account-url f.s.axiom/iri-or-prefixed-spec)
+  :args (s/cat :account-url :uniwuni/uri)
   :ret f.s.query/ask-query-spec)
 
 (defn add-account!-update [agent-url account-data]
   [{:prefixes my-prefixes
-   :insert-data [[[agent-url :foaf/name (account-data :account/name)]
-                  [agent-url :foaf/account (account-data :account/url)]
-                  [(account-data :account/url) :a :foaf/Account]
-                  [(account-data :account/url) :foaf/accountServiceHomepage (account-data :account/platform)]
-                  [(account-data :account/url) :foaf/accountName (account-data :account/name)]
+   :insert-data [[[agent-url :foaf/name (account-data :uniwuni.account/name)]
+                  [agent-url :foaf/account (account-data :uniwuni.account/url)]
+                  [(account-data :uniwuni.account/url) :a :foaf/Account]
+                  [(account-data :uniwuni.account/url) :foaf/accountServiceHomepage (account-data :uniwuni.account/platform)]
+                  [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]
                   ]]
    }])
+
+(s/fdef add-account!-update
+  :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
+  :ret (s/coll-of f.s.update/insert-data-update-spec))
 
 (defn add-agent-account!-update [agent-url account-data]
   (cons
    {:prefixes my-prefixes
     :insert-data [agent-url :a :foaf/Agent]}
    (add-account!-update agent-url account-data)))
+
+(s/fdef add-agent-account!-update
+  :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
+  :ret (s/coll-of f.s.update/insert-data-update-spec))
+
 
 (stest/instrument)
