@@ -1,35 +1,41 @@
 (ns uniwuni.queries
   (:require
    [clojure.spec.alpha :as s]
-   [clojure.spec.test.alpha :as stest]))
+   [clojure.spec.test.alpha :as stest]
+   [ont-app.vocabulary.core :as voc]
+   [ont-app.igraph-vocabulary.core :as igv :refer [mint-kwi]]))
 (require '[com.yetanalytics.flint :as f])
 (require '[com.yetanalytics.flint.spec
            [prologue :as f.s.prologue]
-           [axiom :as f.s.axiom]
            [query :as f.s.query]
            [update :as f.s.update]])
-(require '[clojure.spec.alpha :as s])
-(require '[clojure.test.check.generators :as gen])
-(require '[uniwuni.general :as general])
+(require '[uniwuni.general :as general :refer [uri]])
+(require '[uniwuni.config :as config :refer [config]])
 (s/check-asserts true)
 
-(def unia-prefix "https://uniwuni.github.io/archives#")
-
 (def my-prefixes
-  {:owl "<http://www.w3.org/2002/07/owl#>"
-   :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
-   :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
-   :xsd  "<http://www.w3.org/2001/XMLSchema#>"
-   :foaf "<http://xmlns.com/foaf/0.1/>"
-   :frbr "<http://purl.org/vocab/frbr/core#>"
-   :dce "<http://purl.org/dc/elements/1.1/>"
-   :dct "<http://purl.org/dc/terms/>"
-   :unic "<https://uniwuni.github.io/me#>"
-   :unia (str "<" unia-prefix ">")
-   :fabio "<http://purl.org/spar/fabio/>"
-   :mo "<http://purl.org/ontology/mo/>"})
+  {:owl (uri "http://www.w3.org/2002/07/owl#")
+   :rdf (uri "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+   :rdfs (uri "http://www.w3.org/2000/01/rdf-schema#")
+   :xsd  (uri "http://www.w3.org/2001/XMLSchema#")
+   :foaf (uri "http://xmlns.com/foaf/0.1/")
+   :frbr (uri "http://purl.org/vocab/frbr/core#")
+   :dce (uri "http://purl.org/dc/elements/1.1/")
+   :dct (uri "http://purl.org/dc/terms/")
+   :unic (uri "https://uniwuni.github.io/me#")
+   :unia (config :uniwuni.config/prefix-archive)
+   :fabio (uri "http://purl.org/spar/fabio/")
+   :mo (uri "http://purl.org/ontology/mo/")})
 
 (s/assert ::f.s.prologue/prefixes my-prefixes)
+
+(voc/put-ns-meta!
+ 'uniwuni.archive
+  {
+    :vann/preferredNamespacePrefix "unia"
+    :vann/preferredNamespaceUri (my-prefixes :unia)
+  })
+
 
 (defn agent-of-channel?-query [account-url]
   {:prefixes my-prefixes

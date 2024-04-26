@@ -1,5 +1,5 @@
 (ns uniwuni.queries-test
-  (:require [uniwuni.queries :as sut]))
+  (:require [uniwuni [queries :as sq] [general :as sg]]))
 (require '[com.yetanalytics.flint.spec
            [prologue :as f.s.prologue]
            [axiom :as f.s.axiom]
@@ -17,8 +17,14 @@
 
 (deftest query-test
   (testing "Query generators"
-    (test-spec `sut/agent-of-channel?-query)
-    (test-spec `sut/is-embodied?-query)
-    (test-spec `sut/add-account!-update)
-    (test-spec `sut/add-agent-account!-update)
+    (test-spec `sq/agent-of-channel?-query)
+    (test-spec `sq/is-embodied?-query)
+    (test-spec `sq/add-account!-update)
+    (test-spec `sq/add-agent-account!-update)
     ))
+
+; TODO MOVE THIS
+
+(deftest uri-test
+  (testing "URI function"
+    (test-spec `sg/uri)))
