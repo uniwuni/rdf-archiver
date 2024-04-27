@@ -7,7 +7,7 @@
 (require '[clojure.spec.alpha :as s])
 (require '[clojure.test.check.generators :as gen])
 
-(defn uri-safe-char? [c] (or (Character/isLetterOrDigt c) (some #(= c %) "-_!.")))
+(defn uri-safe-char? [c] (or (Character/isLetterOrDigit c) (some #(= c %) "-_!.")))
 
 (s/fdef uri-safe-char?
   :args (s/cat :c char?)
