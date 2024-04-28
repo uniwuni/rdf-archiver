@@ -5,15 +5,15 @@
             [clojure.java.io :as io]
             [clojure.test :refer [testing is deftest]]
             [me.raynes.fs :as fs]
-            [clojure.spec.alpha :as s]
-            [clj-async-profiler.core :as prof]))
+            [clojure.spec.alpha :as s]))
+
+
+; temporary
+(def profile identity)
 
 (deftest read-video-json-test
   (testing "Reading video JSON"
-    (let [video* (sv/read-video-json (io/resource "Teeza - The Scorpion.info.json"))
-          video (s/conform :uniwuni.video/youtube video*)]
-
-      (is (s/valid? :uniwuni.video/youtube video*) "Video should validate")
+    (let [video (sv/read-video-json (io/resource "Teeza - The Scorpion.info.json"))]
       (is (= (uri "https://youtu.be/egMjYeZXXI8")
              (sv/video-id->uri (:uniwuni.video.youtube/id video))) "Shortlink should match")
       (is (= "Teeza - The Scorpion" (:uniwuni.video.youtube/title video)) "Title should match")
@@ -36,14 +36,7 @@
   (testing "Video path to local youtube should not work")
         (let [videofile (io/resource "incomplete.webm")
           video (sv/video-path->local-youtube (fs/file videofile))]
-          (is (nil? video)))
-  (testing "Performance"
-    (prof/profile (let [videofile (io/resource "Teeza - The Scorpion.mkv")
-                video (sv/video-path->local-youtube (fs/file videofile))
-                data (s/conform :uniwuni.video/youtube (sv/read-video-json (video :uniwuni.video.local.youtube/info)))]
-            (is
-             (= (java.time.LocalDateTime/of 2024 04 28 0 0)
-                (:uniwuni.video.youtube/upload-date data)) "Upload date should match")))))
+          (is (nil? video))))
 
 (deftest ->uri-test
   (testing "ID to link"

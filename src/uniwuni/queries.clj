@@ -10,7 +10,8 @@
     [query :as f.s.query]
     [update :as f.s.update]]
    [uniwuni.general :as general :refer [uri]]
-   [uniwuni.config :as config :refer [config]]))
+   [uniwuni.config :as config :refer [config]]
+   [ont-app.sparql-endpoint.core :as spq]))
 
 (s/check-asserts true)
 
@@ -35,6 +36,8 @@
  {:vann/preferredNamespacePrefix "unia"
   :vann/preferredNamespaceUri (my-prefixes :unia)})
 
+(defmethod voc/resource-type java.net.URI [_] :voc/UriString)
+(defmethod voc/as-uri-string java.net.URI [uri] (str uri)) ;throw
 (defn agent-of-channel?-query [account-url]
   {:prefixes my-prefixes
    :select ['?agent]
@@ -76,5 +79,19 @@
 (s/fdef add-agent-account!-update
   :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
   :ret (s/coll-of f.s.update/insert-data-update-spec))
+
+(def simplify (spq/make-simplifier (spq/update-translators spq/default-translators
+                                       :uri uri)))
+
+(defn exec-select [query query-endpoint]
+  (->> query
+      (f/format-query)
+      (spq/sparql-select query-endpoint)
+      (map simplify)))
+
+(defn exec-updates! [queries update-endpoint]
+  (->> queries
+      (f/format-updates)
+      (spq/sparql-update update-endpoint)))
 
 (stest/instrument)
