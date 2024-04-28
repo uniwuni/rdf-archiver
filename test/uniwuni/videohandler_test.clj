@@ -4,7 +4,9 @@
             [uniwuni.general-test :as gt]
             [clojure.java.io :as io]
             [clojure.test :refer [testing is deftest]]
-            [clojure.spec.alpha :as s]))
+            [me.raynes.fs :as fs]
+            [clojure.spec.alpha :as s]
+            [clj-async-profiler.core :as prof]))
 
 (deftest read-video-json-test
   (testing "Reading video JSON"
@@ -21,6 +23,27 @@
       (is (= nil (:uniwuni.video.youtube/language video)) "Language should not exist")
       (is (= (java.time.LocalDateTime/of 2024 04 28 0 0) (:uniwuni.video.youtube/upload-date video)) "Upload date should match")
       (is (= (inst-ms (:uniwuni.video.youtube/epoch video)) (* 1714304293 1000)) "Download date should match"))))
+
+(deftest video-path->local-youtube-test
+  (testing "Video path to local youtube"
+    (let [videofile (io/resource "Teeza - The Scorpion.mkv")
+          info (io/resource "Teeza - The Scorpion.info.json")
+          thumb (io/resource "Teeza - The Scorpion.jpg")
+          video (sv/video-path->local-youtube (fs/file videofile))]
+          (is (= video {:uniwuni.video.local.youtube/video (fs/file videofile)
+                        :uniwuni.video.local.youtube/info (fs/file info)
+                        :uniwuni.video.local.youtube/thumbnail (fs/file thumb)}))))
+  (testing "Video path to local youtube should not work")
+        (let [videofile (io/resource "incomplete.webm")
+          video (sv/video-path->local-youtube (fs/file videofile))]
+          (is (nil? video)))
+  (testing "Performance"
+    (prof/profile (let [videofile (io/resource "Teeza - The Scorpion.mkv")
+                video (sv/video-path->local-youtube (fs/file videofile))
+                data (s/conform :uniwuni.video/youtube (sv/read-video-json (video :uniwuni.video.local.youtube/info)))]
+            (is
+             (= (java.time.LocalDateTime/of 2024 04 28 0 0)
+                (:uniwuni.video.youtube/upload-date data)) "Upload date should match")))))
 
 (deftest ->uri-test
   (testing "ID to link"

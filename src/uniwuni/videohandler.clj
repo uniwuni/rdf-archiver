@@ -54,7 +54,7 @@
 
 (s/def :uniwuni.video.local.youtube/video (s/and fs/file? #(#{".mkv" ".webm" ".mp4"} (fs/extension %))))
 (s/def :uniwuni.video.local.youtube/thumbnail (s/and fs/file? #(#{".webp" ".jpg"} (fs/extension %))))
-(s/def :uniwuni.video.local.youtube/info (s/and fs/file? #(= ".info.json" (fs/extension %))))
+(s/def :uniwuni.video.local.youtube/info (s/and fs/file? #(clojure.string/ends-with? (fs/base-name %) ".info.json")))
 (s/def :uniwuni.video.local/youtube (s/keys :req [:uniwuni.video.local.youtube/video
                                                   :uniwuni.video.local.youtube/info]
                                             :opt [:uniwuni.video.local.youtube/thumbnail]))
@@ -76,5 +76,23 @@
 (s/fdef channel-id->uri
   :args (s/cat :channel-id :uniwuni.video.youtube/channel-id)
   :ret :uniwuni/full-uri)
+
+(defn video-path->local-youtube [path*]
+  (let [path (fs/absolute path*)
+        dir (fs/parent path)
+        [base _] (fs/split-ext path)
+        webp-thumbnail (fs/file dir (str base ".webp"))
+        jpg-thumbnail (fs/file dir (str base ".jpg"))
+        info-json (fs/file dir (str base ".info.json"))
+        res (s/conform :uniwuni.video.local/youtube
+                   (cond-> {:uniwuni.video.local.youtube/video path
+                            :uniwuni.video.local.youtube/info info-json}
+                     (fs/file? webp-thumbnail) (assoc :uniwuni.video.local.youtube/thumbnail webp-thumbnail)
+                     (fs/file? jpg-thumbnail) (assoc :uniwuni.video.local.youtube/thumbnail jpg-thumbnail)))]
+    (if (s/valid? :uniwuni.video.local/youtube res) res nil)))
+
+(s/fdef video-path->local-youtube
+  :args (s/cat :path fs/file?)
+  :ret (s/nilable :uniwuni.video.local/youtube))
 
 (defn handle-video [])
