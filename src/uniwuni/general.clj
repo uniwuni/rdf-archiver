@@ -40,7 +40,7 @@
                                       :uniwuni.account/name
                                       :uniwuni.account/platform]))
 
-(defn uri [str] (new java.net.URI str))
+(defn uri [s] (new java.net.URI (str s)))
 (s/fdef uri
   :args (s/cat :str string?)
-  :ret :uniwuni/uri)
+  :ret :uniwuni/full-uri)

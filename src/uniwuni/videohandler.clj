@@ -3,22 +3,24 @@
     [clojure.spec.alpha :as s]
     [clojure.java.io :as io]
     [clojure.data.json :as json]
-    [clojure.string]))
+    [clojure.string]
+    [com.gfredericks.test.chuck.generators :as gen']))
 
 (require '[uniwuni.general :as general :refer [uri]])
 
-(s/def :uniwuni.video.youtube/id (s/and string? #(re-matches #"^[-_a-zA-Z0-9]{10}[048AEIMQUYcgkosw]$" %)))
+(s/def :uniwuni.video.youtube/id
+  (let [regex #"[-_a-zA-Z0-9]{10}[048AEIMQUYcgkosw]"] (s/with-gen (s/and string? #(re-matches regex %)) (gen'/string-from-regex regex))))
 (s/def :uniwuni.video.youtube/title (s/and string? #(<= (count %) 100)))
 (s/def :uniwuni.video.youtube/description (s/and string? #(<= (count %) 5000)))
-(s/def :uniwuni.video.youtube/thumbnail :uniwuni/full-uri)
-(s/def :uniwuni.video.youtube/channel-id (s/and string? #(re-matches #"^[0-9A-Za-z_-]{21}[AQgw]$" %)))
+(s/def :uniwuni.video.youtube/thumbnail (s/conformer uri :uniwuni/full-uri))
+(s/def :uniwuni.video.youtube/channel-id
+  (let [regex #"UC[0-9A-Za-z_-]{21}[AQgw]"] (s/with-gen (s/and string? #(re-matches regex %)) (gen'/string-from-regex regex))))
 (s/def :uniwuni.video.youtube/duration (s/and integer? #(<= 0 %)))
 (s/def :uniwuni.video.youtube/channel (s/and string? #(<= (count %) 100)))
 (s/def :uniwuni.video.youtube/language string?)
 
 (s/def :uniwuni.video.youtube/upload-date-literal
-  (s/and string?
-    #(re-matches #"^\d{8}$" %)))
+    (let [regex #"\d{8}"] (s/with-gen (s/and string? #(re-matches regex %)) (gen'/string-from-regex regex))))
 
 ;; Define a conformer to convert valid date literals to inst
 (defn parse-youtube-date-literal [date-str]
@@ -27,7 +29,8 @@
         day (Integer/parseInt (subs date-str 6 8))]
     (.atStartOfDay (java.time.LocalDate/of year month day))))
 
-(s/def :uniwuni.video.youtube/upload-date (s/and (s/conformer parse-youtube-date-literal)
+(s/def :uniwuni.video.youtube/upload-date (s/and :uniwuni.video.youtube/upload-date-literal
+                                                 (s/conformer parse-youtube-date-literal)
                                                  #(instance? java.time.LocalDateTime %)))
 (s/def :uniwuni.video.youtube/epoch (s/and (s/conformer #(java.time.Instant/ofEpochSecond %))
                                            inst?))
@@ -53,7 +56,7 @@
 
 (s/fdef id->short-link
     :args (s/cat :id :uniwuni.video.youtube/id)
-    :ret :uniwuni/uri)
+    :ret :uniwuni/full-uri)
 
 
 (defn handle-video [])

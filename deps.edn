@@ -6,6 +6,7 @@
         ont-app/sparql-client {:mvn/version "0.2.2"}
         ont-app/igraph-vocabulary {:mvn/version "0.2.0"}
         ont-app/vocabulary {:mvn/version "0.4.2"}
+        com.gfredericks/test.chuck {:mvn/version "0.2.13"}
         }
  :aliases
  {:run-m {:main-opts ["-m" "uniwuni.rdf-archiver"]}
