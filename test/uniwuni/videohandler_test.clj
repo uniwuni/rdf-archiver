@@ -23,7 +23,7 @@
 
       (t/is (s/valid? :uniwuni.video/youtube video*) "Video should validate")
       (t/is (= (uri "https://youtu.be/egMjYeZXXI8")
-               (sv/id->short-link (:uniwuni.video.youtube/id video))) "Shortlink should match")
+               (sv/video-id->uri (:uniwuni.video.youtube/id video))) "Shortlink should match")
       (t/is (= "Teeza - The Scorpion" (:uniwuni.video.youtube/title video)) "Title should match")
       (t/is (= "Solomans Archive" (:uniwuni.video.youtube/channel video)) "Channel should match")
       (t/is (= "UCOQdqxbKazl4M_uM0HZrPiw" (:uniwuni.video.youtube/channel-id video)) "Channel should match")
@@ -33,6 +33,7 @@
       (t/is (= (inst-ms (:uniwuni.video.youtube/epoch video)) (* 1714304293 1000)) "Download date should match")
       )))
 
-(deftest id->short-link-test
-  (testing "ID to short link"
-    (gt/test-spec `sv/id->short-link)))
+(deftest ->uri-test
+  (testing "ID to link"
+    (gt/test-spec `sv/video-id->uri)
+    (gt/test-spec `sv/channel-id->uri)))

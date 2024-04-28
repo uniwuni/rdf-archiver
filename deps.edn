@@ -7,6 +7,7 @@
         ont-app/igraph-vocabulary {:mvn/version "0.2.0"}
         ont-app/vocabulary {:mvn/version "0.4.2"}
         com.gfredericks/test.chuck {:mvn/version "0.2.13"}
+        clj-commons/fs {:mvn/version "1.6.311"}
         }
  :aliases
  {:run-m {:main-opts ["-m" "uniwuni.rdf-archiver"]}
