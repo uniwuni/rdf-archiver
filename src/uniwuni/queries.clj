@@ -3,14 +3,15 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as stest]
    [ont-app.vocabulary.core :as voc]
-   [ont-app.igraph-vocabulary.core :as igv :refer [mint-kwi]]))
-(require '[com.yetanalytics.flint :as f])
-(require '[com.yetanalytics.flint.spec
-           [prologue :as f.s.prologue]
-           [query :as f.s.query]
-           [update :as f.s.update]])
-(require '[uniwuni.general :as general :refer [uri]])
-(require '[uniwuni.config :as config :refer [config]])
+   [ont-app.igraph-vocabulary.core :as igv :refer [mint-kwi]]
+   [com.yetanalytics.flint :as f]
+   [com.yetanalytics.flint.spec
+    [prologue :as f.s.prologue]
+    [query :as f.s.query]
+    [update :as f.s.update]]
+   [uniwuni.general :as general :refer [uri]]
+   [uniwuni.config :as config :refer [config]]))
+
 (s/check-asserts true)
 
 (def my-prefixes
@@ -31,17 +32,14 @@
 
 (voc/put-ns-meta!
  'uniwuni.archive
-  {
-    :vann/preferredNamespacePrefix "unia"
-    :vann/preferredNamespaceUri (my-prefixes :unia)
-  })
-
+ {:vann/preferredNamespacePrefix "unia"
+  :vann/preferredNamespaceUri (my-prefixes :unia)})
 
 (defn agent-of-channel?-query [account-url]
   {:prefixes my-prefixes
-    :select ['?agent]
-    :where [{'?agent {:a #{:foaf/Agent}
-                      :foaf/account #{account-url}}}]})
+   :select ['?agent]
+   :where [{'?agent {:a #{:foaf/Agent}
+                     :foaf/account #{account-url}}}]})
 
 (s/fdef agent-of-channel?-query
   :args (s/cat :account-url :uniwuni/uri)
@@ -59,13 +57,11 @@
 
 (defn add-account!-update [agent-url account-data]
   [{:prefixes my-prefixes
-   :insert-data [[[agent-url :foaf/name (account-data :uniwuni.account/name)]
-                  [agent-url :foaf/account (account-data :uniwuni.account/url)]
-                  [(account-data :uniwuni.account/url) :a :foaf/Account]
-                  [(account-data :uniwuni.account/url) :foaf/accountServiceHomepage (account-data :uniwuni.account/platform)]
-                  [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]
-                  ]]
-   }])
+    :insert-data [[[agent-url :foaf/name (account-data :uniwuni.account/name)]
+                   [agent-url :foaf/account (account-data :uniwuni.account/url)]
+                   [(account-data :uniwuni.account/url) :a :foaf/Account]
+                   [(account-data :uniwuni.account/url) :foaf/accountServiceHomepage (account-data :uniwuni.account/platform)]
+                   [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]]]}])
 
 (s/fdef add-account!-update
   :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
@@ -80,6 +76,5 @@
 (s/fdef add-agent-account!-update
   :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
   :ret (s/coll-of f.s.update/insert-data-update-spec))
-
 
 (stest/instrument)

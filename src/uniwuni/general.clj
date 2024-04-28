@@ -1,11 +1,11 @@
-(ns uniwuni.general)
-(require '[com.yetanalytics.flint :as f])
-(require '[com.yetanalytics.flint.spec
-           [prologue :as f.s.prologue]
-           [axiom :as f.s.axiom]
-           [query :as f.s.query]])
-(require '[clojure.spec.alpha :as s])
-(require '[clojure.test.check.generators :as gen])
+(ns uniwuni.general
+  (:require [com.yetanalytics.flint :as f]
+            [com.yetanalytics.flint.spec
+             [prologue :as f.s.prologue]
+             [axiom :as f.s.axiom]
+             [query :as f.s.query]]
+            [clojure.spec.alpha :as s]
+            [clojure.test.check.generators :as gen]))
 
 (defn uri-safe-char? [c] (or (Character/isLetterOrDigit c) (some #(= c %) "-_!.")))
 
@@ -13,18 +13,15 @@
   :args (s/cat :c char?)
   :ret boolean?)
 
-
 (defn make-uri-safe [s] (apply str (map #(if (uri-safe-char? %) % "_") s)))
 
 (s/fdef make-uri-safe
   :args (s/cat :s string?)
   :ret string?)
 
-
 (def iri-gen
-    (gen/one-of (list (s/gen uri?)
-                 (gen/let [x gen/string-alphanumeric] (str "unia:" "word" x "word")))))
-
+  (gen/one-of (list (s/gen uri?)
+                    (gen/let [x gen/string-alphanumeric] (str "unia:" "word" x "word")))))
 
 (s/def :uniwuni/file #(instance? java.io.File %))
 (s/def :uniwuni/absolute-file (s/and :uniwuni/file #(.isAbsolute %)))

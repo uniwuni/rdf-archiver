@@ -5,12 +5,11 @@
            [prologue :as f.s.prologue]
            [axiom :as f.s.axiom]
            [query :as f.s.query]]
-           '[clojure.test :refer [testing is deftest]])
+         '[clojure.test :refer [testing is deftest]])
 (require '[clojure.test.check.generators :as gen])
 
 (require '[clojure.spec.alpha :as s])
 (require '[clojure.spec.test.alpha :as stest])
-
 
 (def overwrites {})
 

@@ -1,13 +1,12 @@
 (ns uniwuni.videohandler
-    (:require
-     [clojure.data.json :as json]
-     [clojure.java.io :as io]
-     [clojure.spec.alpha :as s]
-     [clojure.string]
-     [com.gfredericks.test.chuck.generators :as gen']
-     [me.raynes.fs :as fs]))
-
-(require '[uniwuni.general :as general :refer [uri]])
+  (:require
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
+   [clojure.string]
+   [com.gfredericks.test.chuck.generators :as gen']
+   [me.raynes.fs :as fs]
+   [uniwuni.general :as general :refer [uri]]))
 
 (s/def :uniwuni.video.youtube/id
   (let [regex #"[-_a-zA-Z0-9]{10}[048AEIMQUYcgkosw]"] (-> string?
@@ -25,9 +24,9 @@
 (s/def :uniwuni.video.youtube/language string?)
 
 (s/def :uniwuni.video.youtube/upload-date-literal
-    (let [regex #"\d{8}"] (-> string?
-                              (s/and #(re-matches regex %))
-                              (s/with-gen (gen'/string-from-regex regex)))))
+  (let [regex #"\d{8}"] (-> string?
+                            (s/and #(re-matches regex %))
+                            (s/with-gen (gen'/string-from-regex regex)))))
 
 ;; Define a conformer to convert valid date literals to inst
 (defn parse-youtube-date-literal [date-str]
@@ -44,39 +43,38 @@
 
 (s/def :uniwuni.video/youtube
   (s/keys :req [:uniwuni.video.youtube/id
-               :uniwuni.video.youtube/title
-               :uniwuni.video.youtube/description
-               :uniwuni.video.youtube/thumbnail
-               :uniwuni.video.youtube/channel-id
-               :uniwuni.video.youtube/duration
-               :uniwuni.video.youtube/channel
-               :uniwuni.video.youtube/upload-date
-               :uniwuni.video.youtube/epoch] :opt [:uniwuni.video.youtube/language]))
+                :uniwuni.video.youtube/title
+                :uniwuni.video.youtube/description
+                :uniwuni.video.youtube/thumbnail
+                :uniwuni.video.youtube/channel-id
+                :uniwuni.video.youtube/duration
+                :uniwuni.video.youtube/channel
+                :uniwuni.video.youtube/upload-date
+                :uniwuni.video.youtube/epoch] :opt [:uniwuni.video.youtube/language]))
 
 (s/def :uniwuni.video.local.youtube/video (s/and fs/file? #(#{".mkv" ".webm" ".mp4"} (fs/extension %))))
 (s/def :uniwuni.video.local.youtube/thumbnail (s/and fs/file? #(#{".webp" ".jpg"} (fs/extension %))))
-(s/def :uniwuni.video.local.youtube/info (s/and fs/file? #( = ".info.json" (fs/extension %))))
+(s/def :uniwuni.video.local.youtube/info (s/and fs/file? #(= ".info.json" (fs/extension %))))
 (s/def :uniwuni.video.local/youtube (s/keys :req [:uniwuni.video.local.youtube/video
                                                   :uniwuni.video.local.youtube/info]
                                             :opt [:uniwuni.video.local.youtube/thumbnail]))
 
 (defn read-video-json [file]
-    (with-open [r (io/reader file)]
-        (json/read r :key-fn (comp keyword #(str "uniwuni.video.youtube/" %) #(clojure.string/replace % "_" "-")))))
-
+  (with-open [r (io/reader file)]
+    (json/read r :key-fn (comp keyword #(str "uniwuni.video.youtube/" %) #(clojure.string/replace % "_" "-")))))
 
 (defn video-id->uri [id]
-    (uri (str "https://youtu.be/" id)))
+  (uri (str "https://youtu.be/" id)))
 
 (s/fdef video-id->uri
-    :args (s/cat :id :uniwuni.video.youtube/id)
-    :ret :uniwuni/full-uri)
+  :args (s/cat :id :uniwuni.video.youtube/id)
+  :ret :uniwuni/full-uri)
 
 (defn channel-id->uri [id]
-    (uri (str "https://www.youtube.com/channel/" id)))
+  (uri (str "https://www.youtube.com/channel/" id)))
 
 (s/fdef channel-id->uri
-    :args (s/cat :channel-id :uniwuni.video.youtube/channel-id)
-    :ret :uniwuni/full-uri)
+  :args (s/cat :channel-id :uniwuni.video.youtube/channel-id)
+  :ret :uniwuni/full-uri)
 
 (defn handle-video [])
