@@ -113,9 +113,9 @@
         info-json (fs/file dir (str base ".info.json"))
         res (cond-> {:uniwuni.video.local.youtube/video path
                             :uniwuni.video.local.youtube/info info-json}
+                     true (assoc :uniwuni.video.local.youtube/thumbnail path) ; thumbnail is stored in video
                      (fs/file? webp-thumbnail) (assoc :uniwuni.video.local.youtube/thumbnail webp-thumbnail)
-                     (fs/file? jpg-thumbnail) (assoc :uniwuni.video.local.youtube/thumbnail jpg-thumbnail)
-                     true (assoc :uniwuni.video.local.youtube/thumbnail path))] ; thumbnail is stored in video
+                     (fs/file? jpg-thumbnail) (assoc :uniwuni.video.local.youtube/thumbnail jpg-thumbnail))]
     (if (s/valid? :uniwuni.video.local/youtube res)
         (s/conform :uniwuni.video.local/youtube res)
         (s/explain :uniwuni.video.local/youtube res))))
