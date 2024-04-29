@@ -15,13 +15,89 @@
    [ont-app.vocabulary.core :as voc]
    ))
 
-(defmulti get-uri :type)
+;(defmulti get-uri :type)
+;(defmethod get-uri :wah [x] "wah")
+;
+;
+;
+;
+(defn video-id->uri "youtu.be URI from video id" [id]
+  (uri (str "https://youtu.be/" id)))
 
+(s/fdef video-id->uri
+  :args (s/cat :id :uniwuni.video.youtube/id)
+  :ret :uniwuni/full-uri)
+
+(defn channel-id->uri "YouTube channel URI from channel id" [id]
+  (uri (str "https://www.youtube.com/channel/" id)))
+
+(s/fdef channel-id->uri
+  :args (s/cat :channel-id :uniwuni.video.youtube/channel-id)
+  :ret :uniwuni/full-uri)
+
+
+(defn path->host-uri [path*]
+  (let [parent (((config/config :uniwuni.config/platforms) :uniwuni.config.platform/youtube) :uniwuni.config.platform/folder)
+        path (fs/absolute path*)
+        prefix (((config/config :uniwuni.config/platforms) :uniwuni.config.platform/youtube) :uniwuni.config.platform/prefix)]
+  (str prefix (.relativize (.toPath parent) (.toPath path)))))
+
+(s/fdef path->host-uri
+  :args (s/cat :file fs/file?)
+  :ret :voc/uri-str-spec)
 
 (voc/register-resource-type-context! :uniwuni.video.youtube/resource-type-context ::voc/resource-type-context)
-(defmethod voc/resource-type [:uniwuni.video.youtube/resource-type-context clojure.lang.PersistentArrayMap] [map] (map :type))
-(defmethod voc/as-uri-string [:uniwuni.video.youtube/resource-type-context clojure.lang.PersistentArrayMap] [map]
-  (get-uri map))
+
+(defmethod voc/resource-type [:uniwuni.video.youtube/resource-type-context clojure.lang.IPersistentMap] [map] (map :type))
+(defn video->name [video]
+  (general/make-uri-safe (str (:uniwuni.video.youtube/title video) "-" (:uniwuni.video.youtube/id video))))
+
+(s/fdef video->name
+  :args (s/cat :video :uniwuni.video/youtube)
+  :ret string?)
+
+(defn video-resource->uri [infix video] {:post [(s/assert :voc/uri-str-spec %)]}
+  (uri (str (config/config :uniwuni.config/prefix-archive) infix (video->name video))))
+
+
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/uploader [video]
+  (uri (str (config/config :uniwuni.config/prefix-archive) "agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video))))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/channel [video]
+  (channel-id->uri (:uniwuni.video.youtube/channel-id video)))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/work [video]
+  (video-resource->uri "biblio/work/" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/expression [video]
+  (video-resource->uri "biblio/expr/" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/manifestation-remote [video]
+  (str (video-id->uri (:uniwuni.video.youtube/id video))))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/manifestation-file [video]
+  (video-resource->uri "biblio/mani/file/" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources/item [video]
+  (path->host-uri (:uniwuni.video.local.youtube/video video)))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources.thumbnail/work [video]
+  (video-resource->uri "biblio/work/thumbnail-" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources.thumbnail/expr [video]
+  (video-resource->uri "biblio/expr/thumbnail-" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources.thumbnail/manifestation-remote [video]
+   (:uniwuni.video.youtube/thumbnail video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources.thumbnail/manifestation-file [video]
+  (video-resource->uri "biblio/mani/file/thumbnail-" video))
+
+(defmethod voc/as-uri-string :uniwuni.video.youtube.resources.thumbnail/item [video]
+  (path->host-uri (:uniwuni.video.local.youtube/thumbnail video)))
+
+(defn video-data->uri [video type] (voc/as-uri-string (assoc video :type type)))
 
 (s/def :uniwuni.video.youtube/id
   (let [regex #"[-_a-zA-Z0-9]{10}[048AEIMQUYcgkosw]"] (-> string?
@@ -85,24 +161,6 @@
   :args (s/cat :file fs/file?)
   :ret :uniwuni.video/youtube)
 
-(defn video-id->uri "youtu.be URI from video id" [id]
-  (uri (str "https://youtu.be/" id)))
-
-(s/fdef video-id->uri
-  :args (s/cat :id :uniwuni.video.youtube/id)
-  :ret :uniwuni/full-uri)
-
-(defn channel-id->uri "YouTube channel URI from channel id" [id]
-  (uri (str "https://www.youtube.com/channel/" id)))
-
-(s/fdef channel-id->uri
-  :args (s/cat :channel-id :uniwuni.video.youtube/channel-id)
-  :ret :uniwuni/full-uri)
-
-(defn video->uploader-agent [video]
-  (uri (str (config/config :uniwuni.config/prefix-archive) "/agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video))))
-
-
 
 (defn video-path->local-youtube "Info about local video from video file" [path*]
   (let [path (fs/absolute path*)
@@ -124,39 +182,50 @@
   :args (s/cat :path fs/file?)
   :ret (s/nilable :uniwuni.video.local/youtube))
 
-;; (defn get-maybe-add-agents [video]
-;;   (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
-;;         agents (fn [] (-> video
-;;                    :uniwuni.video.youtube/channel-id
-;;                    channel-id->uri
-;;                    queries/agent-of-channel?-query
-;;                    (queries/exec-select query-endpoint)
-;;                    (#(map :agent %))))]
-;;     (if (empty? (agents)
-;;                 (do
-;;                   (queries/exec-updates!
-;;                    (->
+(defn get-maybe-add-agents [video]
+  (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
+        update-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/update)
+        agents (fn [] (-> video
+                   (assoc :type :uniwuni.video.youtube.resources/channel)
+                   voc/as-uri-string
+                   queries/agent-of-channel?-query
+                   (queries/exec-select query-endpoint)
+                   (#(map :agent %))
+                 ))
+        agents1 (agents)
+        update-agents (fn [] (let
+                                [agent-url (video-data->uri video :uniwuni.video.youtube.resources/uploader)
+                                 account (video-data->uri video :uniwuni.video.youtube.resources/channel)
+                                 agent-name (:uniwuni.video.youtube/channel video)
+                                 account-data {:uniwuni.account/url account
+                                                :uniwuni.account/name agent-name
+                                                :uniwuni.account/platform (uri "https://www.youtube.com/")}
+                                 update (queries/add-agent-account!-update agent-url account-data)]
+                              (queries/exec-updates! update update-endpoint)))]
+  (if (empty? agents1)
+              (do (update-agents) (agents))
+              agents1)))
 
 
-;;                    ))
-;;                 )  agents)))
-
-
-(defn handle-data-video [local-video video]
+(defn handle-data-video [video]
   (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
         agents (-> video
                    :uniwuni.video.youtube/channel-id
-                   channel-id->uri
+                   (assoc :type :uniwuni.video.youtube.resources/uploader)
+                   voc/as-uri-string
                    queries/agent-of-channel?-query
                    (queries/exec-select query-endpoint)
                    (#(map :agent %)))]
 
       agents))
 
+(defn video-path->youtube [path]
+    (let [local-video (video-path->local-youtube path)
+        video (merge local-video (read-video-json (:uniwuni.video.local.youtube/info local-video)))]
+      video))
+
+
 (defn handle-video [path]
-  (let [local-video (video-path->local-youtube path)
-        video (read-video-json (:uniwuni.video.local.youtube/info local-video))]
+    (handle-data-video (video-path->youtube path)))
 
-    (handle-data-video local-video video)))
-
-(stest/instrument)
+;(stest/instrument)

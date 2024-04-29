@@ -35,8 +35,8 @@
     {:uniwuni.config.platform/folder (io/file "/run/media/uni/Neoproterozoikum/Archive/Musik/Soundcloud Likes/")
      :uniwuni.config.platform/prefix (uri "http://localhost:9999/Archive/Musik/Soundcloud%20Likes/")}}
    :uniwuni.config/sparql
-   {:uniwuni.config.sparql/query  "http://localhost:3030/archive/sparql"
-    :uniwuni.config.sparql/update "http://localhost:3030/archive2/update/"} ;change for prod
+   {:uniwuni.config.sparql/query  "http://localhost:3030/videos-test/sparql"
+    :uniwuni.config.sparql/update "http://localhost:3030/videos-test/update"} ;change for prod
    :uniwuni.config/prefix-archive (uri "https://uniwuni.github.io/archives/")})
 
 (s/assert :uniwuni/config default-config)

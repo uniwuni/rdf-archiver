@@ -5,7 +5,8 @@
              [axiom :as f.s.axiom]
              [query :as f.s.query]]
             [clojure.spec.alpha :as s]
-            [clojure.test.check.generators :as gen]))
+            [clojure.test.check.generators :as gen]
+            [ont-app.vocabulary.core :as voc]))
 
 (defn uri-safe-char? [c] (or (Character/isLetterOrDigit c) (some #(= c %) "-_!.")))
 
@@ -41,3 +42,4 @@
 (s/fdef uri
   :args (s/cat :str string?)
   :ret :uniwuni/full-uri)
+

@@ -13,7 +13,7 @@
    [uniwuni.config :as config :refer [config]]
    [ont-app.sparql-endpoint.core :as spq]))
 
-(s/check-asserts true)
+(s/check-asserts false)
 
 (def my-prefixes
   {:owl (uri "http://www.w3.org/2002/07/owl#")
@@ -36,8 +36,9 @@
  {:vann/preferredNamespacePrefix "unia"
   :vann/preferredNamespaceUri (my-prefixes :unia)})
 
-(defmethod voc/resource-type java.net.URI [_] :voc/UriString)
-(defmethod voc/as-uri-string java.net.URI [uri] (str uri)) ;throw
+(defmethod voc/resource-type [:ont-app.vocabulary.core/resource-type-context java.net.URI] [_] :voc/UriString)
+(defmethod voc/as-uri-string java.net.URI [uri] (str uri))
+
 (defn agent-of-channel?-query [account-url]
   {:prefixes my-prefixes
    :select ['?agent]
@@ -60,11 +61,11 @@
 
 (defn add-account!-update [agent-url account-data]
   [{:prefixes my-prefixes
-    :insert-data [[[agent-url :foaf/name (account-data :uniwuni.account/name)]
+    :insert-data [[agent-url :foaf/name (account-data :uniwuni.account/name)]
                    [agent-url :foaf/account (account-data :uniwuni.account/url)]
                    [(account-data :uniwuni.account/url) :a :foaf/Account]
                    [(account-data :uniwuni.account/url) :foaf/accountServiceHomepage (account-data :uniwuni.account/platform)]
-                   [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]]]}])
+                   [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]]}])
 
 (s/fdef add-account!-update
   :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)
@@ -73,7 +74,7 @@
 (defn add-agent-account!-update [agent-url account-data]
   (cons
    {:prefixes my-prefixes
-    :insert-data [agent-url :a :foaf/Agent]}
+    :insert-data [[agent-url :a :foaf/Agent]]}
    (add-account!-update agent-url account-data)))
 
 (s/fdef add-agent-account!-update
