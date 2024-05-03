@@ -42,4 +42,3 @@
 (s/fdef uri
   :args (s/cat :str string?)
   :ret :uniwuni/full-uri)
-
