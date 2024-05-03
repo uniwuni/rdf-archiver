@@ -30,7 +30,7 @@
   {:uniwuni.config/platforms
    {:uniwuni.config.platform/youtube
     {:uniwuni.config.platform/folder (io/file "/run/media/uni/Neoproterozoikum/Archive/Videos/YouTube History/ytvideos")
-     :uniwuni.config.platform/prefix (uri "http://localhost:9999/Archive/Videos/Youtube%20History/ytvideos/")}
+     :uniwuni.config.platform/prefix (uri "http://localhost:9999/Archive/Videos/YouTube%20History/ytvideos/")}
     :uniwuni.config.platform/soundcloud
     {:uniwuni.config.platform/folder (io/file "/run/media/uni/Neoproterozoikum/Archive/Musik/Soundcloud Likes/")
      :uniwuni.config.platform/prefix (uri "http://localhost:9999/Archive/Musik/Soundcloud%20Likes/")}}

@@ -21,7 +21,6 @@
 ;
 ;
 
-
 (defn video-id->uri "youtu.be URI from video id" [id]
   (uri (str "https://youtu.be/" id)))
 
@@ -70,7 +69,7 @@
   (uri (str (config/config :uniwuni.config/prefix-archive) infix (video->name video))))
 
 (defmethod voc/as-uri-string :uniwuni.video.youtube.resources/uploader [video]
-  (uri (str (config/config :uniwuni.config/prefix-archive) "agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video))))
+  (or (:uniwuni.video.youtube/uploader video) (uri (str (config/config :uniwuni.config/prefix-archive) "agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video)))))
 
 (defmethod voc/as-uri-string :uniwuni.video.youtube.resources/channel [video]
   (channel-id->uri (:uniwuni.video.youtube/channel-id video)))
@@ -234,8 +233,7 @@
                    :dce/date #{(:uniwuni.video.youtube/upload-date video)}
                    :dce/title #{(:uniwuni.video.youtube/title video)}
                    :dce/description #{(:uniwuni.video.youtube/description video)}
-                   :dce/extent #{(:uniwuni.video.youtube/duration video)}
-                   }
+                   :dce/extent #{(:uniwuni.video.youtube/duration video)}}
 
                   (video-data->uri video :uniwuni.video.youtube.resources/manifestation-file)
                   {:a #{:frbr/Manifestation :fabio/DigitalManifestation}
@@ -270,31 +268,26 @@
                   (video-data->uri video :uniwuni.video.youtube.resources.thumbnail/manifestation-file)
                   {:a #{:frbr/Manifestation :fabio/DigitalManifestation}
                    :frbr/exemplar #{(video-data->uri video :uniwuni.video.youtube.resources.thumbnail/item)}
-                   :dce/date #{(:uniwuni.video.youtube/epoch video)}}
-                    }
+                   :dce/date #{(:uniwuni.video.youtube/epoch video)}}}
 
                  {(video-data->uri video :uniwuni.video.youtube.resources.thumbnail/item)
                   {:a #{:frbr/Item :fabio/ComputerFile}
                    :frbr/owner #{:unic/me}}})]}))
 
-(defn handle-data-video [video]
+(defn handle-data-video [video opts]
   (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
-        agents (-> video
-                   :uniwuni.video.youtube/channel-id
-                   (assoc :type :uniwuni.video.youtube.resources/uploader)
-                   voc/as-uri-string
-                   queries/agent-of-channel?-query
-                   (queries/exec-select query-endpoint)
-                   (#(map :agent %)))]
-
-    agents))
+        update-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/update)]
+    (when (or (:overwrite opts) (not (queries/exec-ask (queries/is-embodied?-query (video-data->uri video :uniwuni.video.youtube.resources/manifestation-remote)) query-endpoint)))
+      (let [agents (get-maybe-add-agents video)
+            video2 (assoc video :uniwuni.video.youtube/uploader (first agents))] ; arbitrary choice but idc
+        (queries/exec-updates! (video-add-query video2) update-endpoint)))))
 
 (defn video-path->youtube [path]
   (let [local-video (video-path->local-youtube path)
         video (merge local-video (read-video-json (:uniwuni.video.local.youtube/info local-video)))]
     video))
 
-(defn handle-video [path]
-  (handle-data-video (video-path->youtube path)))
+(defn handle-video [path opts]
+  (handle-data-video (video-path->youtube path) opts))
 
 ;(stest/instrument)

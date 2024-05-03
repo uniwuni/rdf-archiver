@@ -90,6 +90,11 @@
       (spq/sparql-select query-endpoint)
       (map simplify)))
 
+(defn exec-ask [query query-endpoint]
+  (->> query
+      (f/format-query)
+      (spq/sparql-ask query-endpoint)))
+
 (defn exec-updates! [queries update-endpoint]
   (->> queries
       (f/format-updates)
