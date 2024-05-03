@@ -12,7 +12,8 @@
    [uniwuni.queries :as queries]
    [uniwuni.config :as config]
    [clojure.spec.test.alpha :as stest]
-   [ont-app.vocabulary.core :as voc]))
+   [ont-app.vocabulary.core :as voc]
+   [clojure.tools.logging :as log]))
 
 ;(defmulti get-uri :type)
 ;(defmethod get-uri :wah [x] "wah")
@@ -69,7 +70,7 @@
   (uri (str (config/config :uniwuni.config/prefix-archive) infix (video->name video))))
 
 (defmethod voc/as-uri-string :uniwuni.video.youtube.resources/uploader [video]
-  (or (:uniwuni.video.youtube/uploader video) (uri (str (config/config :uniwuni.config/prefix-archive) "agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video)))))
+  (or (:uniwuni.video.youtube.resources/uploader video) (uri (str (config/config :uniwuni.config/prefix-archive) "agents/youtube/" (general/make-uri-safe (:uniwuni.video.youtube/channel video)) "-" (:uniwuni.video.youtube/channel-id video)))))
 
 (defmethod voc/as-uri-string :uniwuni.video.youtube.resources/channel [video]
   (channel-id->uri (:uniwuni.video.youtube/channel-id video)))
@@ -207,7 +208,9 @@
                                update (queries/add-agent-account!-update agent-url account-data)]
                                (queries/exec-updates! update update-endpoint)))]
     (if (empty? agents1)
-      (do (update-agents) (agents))
+      (do (log/info "Adding uploader" (:uniwuni.video.youtube/channel video) "..." )
+          (update-agents)
+          (agents))
       agents1)))
 
 (defn video-add-query [video]
@@ -215,7 +218,7 @@
          :insert-data
          [(merge {(video-data->uri video :uniwuni.video.youtube.resources/work)
                   {:a #{:frbr/Work :fabio/MovingImage}
-                   :dce/title #{(:uniwuni.video.youtube/title video)}
+                   :dce/title #{(general/escape-for-sparql (:uniwuni.video.youtube/title video))}
                    :frbr/realization #{(video-data->uri video :uniwuni.video.youtube.resources/expression)}}
 
                   (video-data->uri video :uniwuni.video.youtube.resources/expression)
@@ -223,7 +226,7 @@
                           :frbr/embodiment
                           #{(video-data->uri video :uniwuni.video.youtube.resources/manifestation-remote)
                             (video-data->uri video :uniwuni.video.youtube.resources/manifestation-file)}
-                          :dce/title #{(:uniwuni.video.youtube/title video)}}
+                          :dce/title #{(general/escape-for-sparql (:uniwuni.video.youtube/title video))}}
                          (if (:uniwuni.video.youtube/language video) {:dce/language #{(:uniwuni.video.youtube/language video)}} {}))
 
                   (video-data->uri video :uniwuni.video.youtube.resources/manifestation-remote)
@@ -231,8 +234,8 @@
                    :frbr/producer #{(video-data->uri video :uniwuni.video.youtube.resources/uploader)}
                    :frbr/reproduction #{(video-data->uri video :uniwuni.video.youtube.resources/manifestation-file)}
                    :dce/date #{(:uniwuni.video.youtube/upload-date video)}
-                   :dce/title #{(:uniwuni.video.youtube/title video)}
-                   :dce/description #{(:uniwuni.video.youtube/description video)}
+                   :dce/title #{(general/escape-for-sparql (:uniwuni.video.youtube/title video))}
+                   :dce/description #{(general/escape-for-sparql (:uniwuni.video.youtube/description video))}
                    :dce/extent #{(:uniwuni.video.youtube/duration video)}}
 
                   (video-data->uri video :uniwuni.video.youtube.resources/manifestation-file)
@@ -240,8 +243,8 @@
                    :frbr/reproduction #{(video-data->uri video :uniwuni.video.youtube.resources/manifestation-file)}
                    :frbr/exemplar #{(video-data->uri video :uniwuni.video.youtube.resources/item)}
                    :dce/date #{(:uniwuni.video.youtube/epoch video)}
-                   :dce/title #{(:uniwuni.video.youtube/title video)}
-                   :dce/description #{(:uniwuni.video.youtube/description video)}
+                   :dce/title #{(general/escape-for-sparql (:uniwuni.video.youtube/title video))}
+                   :dce/description #{(general/escape-for-sparql (:uniwuni.video.youtube/description video))}
                    :dce/extent #{(:uniwuni.video.youtube/duration video)}}
 
                   (video-data->uri video :uniwuni.video.youtube.resources/item)
@@ -278,8 +281,9 @@
   (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
         update-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/update)]
     (when (or (:overwrite opts) (not (queries/exec-ask (queries/is-embodied?-query (video-data->uri video :uniwuni.video.youtube.resources/manifestation-remote)) query-endpoint)))
-      (let [agents (get-maybe-add-agents video)
-            video2 (assoc video :uniwuni.video.youtube/uploader (first agents))] ; arbitrary choice but idc
+      (let [_ (log/info "Adding video" (:uniwuni.video.youtube/title video) "...")
+            agents (get-maybe-add-agents video)
+            video2 (assoc video :uniwuni.video.youtube.resources/uploader (first agents))] ; arbitrary choice but idc
         (queries/exec-updates! (video-add-query video2) update-endpoint)))))
 
 (defn video-path->youtube [path]

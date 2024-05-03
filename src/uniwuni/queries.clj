@@ -61,11 +61,11 @@
 
 (defn add-account!-update [agent-url account-data]
   [{:prefixes my-prefixes
-    :insert-data [[agent-url :foaf/name (account-data :uniwuni.account/name)]
+    :insert-data [[agent-url :foaf/name (general/escape-for-sparql (account-data :uniwuni.account/name))]
                    [agent-url :foaf/account (account-data :uniwuni.account/url)]
                    [(account-data :uniwuni.account/url) :a :foaf/Account]
                    [(account-data :uniwuni.account/url) :foaf/accountServiceHomepage (account-data :uniwuni.account/platform)]
-                   [(account-data :uniwuni.account/url) :foaf/accountName (account-data :uniwuni.account/name)]]}])
+                   [(account-data :uniwuni.account/url) :foaf/accountName (general/escape-for-sparql (account-data :uniwuni.account/name))]]}])
 
 (s/fdef add-account!-update
   :args (s/cat :agent-url :uniwuni/uri :account-data :uniwuni/account)

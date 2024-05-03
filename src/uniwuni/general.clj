@@ -6,7 +6,8 @@
              [query :as f.s.query]]
             [clojure.spec.alpha :as s]
             [clojure.test.check.generators :as gen]
-            [ont-app.vocabulary.core :as voc]))
+            [ont-app.vocabulary.core :as voc]
+            [clojure.string :as str]))
 
 (defn uri-safe-char? [c] (or (Character/isLetterOrDigit c) (some #(= c %) "-_!.")))
 
@@ -42,3 +43,7 @@
 (s/fdef uri
   :args (s/cat :str string?)
   :ret :uniwuni/full-uri)
+
+(defn escape-for-sparql [s]
+  (str/escape s {\\ "\\\\" \" "\\\"" \newline "\\n" \return "\\r"})
+  )
