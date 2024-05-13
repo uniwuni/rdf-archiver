@@ -13,7 +13,11 @@
    [uniwuni.config :as config]
    [clojure.spec.test.alpha :as stest]
    [ont-app.vocabulary.core :as voc]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [com.yetanalytics.flint.spec
+    [prologue :as f.s.prologue]
+    [query :as f.s.query]
+    [update :as f.s.update]]))
 
 ;(defmulti get-uri :type)
 ;(defmethod get-uri :wah [x] "wah")
@@ -208,12 +212,16 @@
                                update (queries/add-agent-account!-update agent-url account-data)]
                                (queries/exec-updates! update update-endpoint)))]
     (if (empty? agents1)
-      (do (log/info "Adding uploader" (:uniwuni.video.youtube/channel video) "..." )
+      (do (log/info "Adding uploader" (:uniwuni.video.youtube/channel video) "...")
           (update-agents)
           (agents))
       agents1)))
 
-(defn video-add-query [video]
+(s/fdef get-maybe-add-agents
+  :args (s/cat :video :uniwuni.video/youtube)
+  :ret (s/coll-of :uniwuni/full-uri))
+
+(defn video-add!-update [video]
   (list {:prefixes queries/my-prefixes
          :insert-data
          [(merge {(video-data->uri video :uniwuni.video.youtube.resources/work)
@@ -277,6 +285,10 @@
                   {:a #{:frbr/Item :fabio/ComputerFile}
                    :frbr/owner #{:unic/me}}})]}))
 
+(s/fdef video-add!-update
+  :args (s/cat :video (s/and :uniwuni.video/youtube :uniwuni.video.local/youtube))
+  :ret (s/coll-of f.s.update/insert-data-update-spec))
+
 (defn handle-data-video [video opts]
   (let [query-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/query)
         update-endpoint (-> config/config :uniwuni.config/sparql :uniwuni.config.sparql/update)]
@@ -284,14 +296,28 @@
       (let [_ (log/info "Adding video" (:uniwuni.video.youtube/title video) "...")
             agents (get-maybe-add-agents video)
             video2 (assoc video :uniwuni.video.youtube.resources/uploader (first agents))] ; arbitrary choice but idc
-        (queries/exec-updates! (video-add-query video2) update-endpoint)))))
+        (queries/exec-updates! (video-add!-update video2) update-endpoint)))))
+
+
+(s/def :uniwuni.handle-data/options (s/keys :opt [:overwrite]))
+
+(s/fdef handle-data-video
+  :args (s/cat :video (s/and :uniwuni.video/youtube :uniwuni.video.local/youtube) :opts :uniwuni.handle-data/options)
+  :ret string?)
 
 (defn video-path->youtube [path]
   (let [local-video (video-path->local-youtube path)
         video (merge local-video (read-video-json (:uniwuni.video.local.youtube/info local-video)))]
     video))
 
+(s/fdef video-path->youtube
+  :args (s/cat :path fs/file?)
+  :ret (s/nilable (s/and :uniwuni.video/youtube :uniwuni.video.local/youtube)))
+
 (defn handle-video [path opts]
   (handle-data-video (video-path->youtube path) opts))
 
+(s/fdef handle-video
+  :args (s/cat :path fs/file? :opts :uniwuni.handle-data/options)
+  :ret string?)
 ;(stest/instrument)
