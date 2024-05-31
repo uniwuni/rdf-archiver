@@ -67,4 +67,4 @@
   (map #(videohandler/handle-video % opts)
        (filter #(not= :already-added %) (download-playlist playlist limit))))
 
-(defn handle-recent [] (download-and-handle-playlist (uri "https://www.youtube.com/feed/history") 5 {}))
+(defn handle-recent [] (download-and-handle-playlist (uri "https://www.youtube.com/feed/history") 100 {}))
