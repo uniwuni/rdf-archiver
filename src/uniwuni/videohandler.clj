@@ -115,7 +115,7 @@
   (let [regex #"[-_a-zA-Z0-9]{10}[048AEIMQUYcgkosw]"] (-> string?
                                                           (s/and #(re-matches regex %))
                                                           (s/with-gen (gen'/string-from-regex regex)))))
-(s/def :uniwuni.video.youtube/title (s/and string? #(<= (count %) 100)))
+(s/def :uniwuni.video.youtube/title (s/and string? #(<= (count %) 200)))
 (s/def :uniwuni.video.youtube/description (s/and string? #(<= (count %) 5000)))
 (s/def :uniwuni.video.youtube/thumbnail (s/conformer uri :uniwuni/full-uri))
 (s/def :uniwuni.video.youtube/channel-id
@@ -257,7 +257,7 @@
 
                   (video-data->uri video :uniwuni.video.youtube.resources/item)
                   {:a #{:frbr/Item :fabio/ComputerFile}
-                   :frbr/owner :unic/me}
+                   :frbr/owner #{:unic/me}}
 
                   (video-data->uri video :uniwuni.video.youtube.resources.thumbnail/work)
                   {:a #{:frbr/Work :fabio/StillImage}
@@ -299,7 +299,7 @@
         (queries/exec-updates! (video-add!-update video2) update-endpoint)))))
 
 
-(s/def :uniwuni.handle-data/options (s/keys :opt [:overwrite]))
+;(s/def :uniwuni.handle-data/options (s/keys :opt-un [:overwrite]))
 
 (s/fdef handle-data-video
   :args (s/cat :video (s/and :uniwuni.video/youtube :uniwuni.video.local/youtube) :opts :uniwuni.handle-data/options)

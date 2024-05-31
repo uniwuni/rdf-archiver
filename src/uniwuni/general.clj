@@ -45,5 +45,5 @@
   :ret :uniwuni/full-uri)
 
 (defn escape-for-sparql [s]
-  (str/escape s {\\ "\\\\" \" "\\\"" \newline "\\n" \return "\\r"})
+  (str/escape s {\\ "\\\\" \" "\\\"" \newline "\\n" \return "\\r" })
   )
