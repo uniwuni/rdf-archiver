@@ -20,7 +20,7 @@
          "--playlist-end" (str limit))]
     (if (= 0 (:exit res))
       (map uri (str/split-lines (:out res)))
-      (throw (ex-info "yt-dlp failed" res)))))
+      (do (log/fatal "yt-dlp failed" (:err res)) (throw (ex-info "yt-dlp failed" res))))))
 
 (defn download-video [video]
   (let [_ (log/info "Downloading" video)
@@ -59,12 +59,12 @@
 
 (defn download-playlist [playlist limit]
   (let [entries (get-playlist-entries playlist limit)]
-    (map download-video entries)))
+    (map #(try (download-video %) (catch Exception e (do (log/warn "Exception: " (.getMessage e)) :error))) entries)))
 
 
 
 (defn download-and-handle-playlist [playlist limit opts]
-  (map #(videohandler/handle-video % opts)
-       (filter #(not= :already-added %) (download-playlist playlist limit))))
+  (pmap #(videohandler/handle-video % opts)
+       (filter #(and (not= :error %) (not= :already-added %)) (download-playlist playlist limit))))
 
-(defn handle-recent [] (download-and-handle-playlist (uri "https://www.youtube.com/feed/history") 100 {}))
+(defn handle-recent [& args] (download-and-handle-playlist (uri "https://www.youtube.com/feed/history") 100 {}))
